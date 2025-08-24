@@ -32,6 +32,8 @@ import android.animation.ValueAnimator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
 
 public class BubbleOverlayService extends Service {
 
@@ -52,6 +54,24 @@ public class BubbleOverlayService extends Service {
     
     private List<WiFiCredential> wifiCredentials = new ArrayList<>();
     private File selectedFile = null;
+    private String selectedFileName = "";
+    private String selectedFileContent = "";
+    
+    // Broadcast receiver for file picker results
+    private BroadcastReceiver filePickerReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("com.roamtool.app.FILE_SELECTED".equals(intent.getAction())) {
+                selectedFileContent = intent.getStringExtra("file_content");
+                selectedFileName = intent.getStringExtra("file_name");
+                processSelectedFile();
+            } else if ("com.roamtool.app.FILE_ERROR".equals(intent.getAction())) {
+                String error = intent.getStringExtra("error_message");
+                statusText.setText("❌ Error reading file:\n" + error);
+                filePickerButton.setText("📂 Select TXT File");
+            }
+        }
+    };
 
     // WiFi credential class
     private static class WiFiCredential {
@@ -77,6 +97,12 @@ public class BubbleOverlayService extends Service {
         
         createBubbleView();
         createExpandedView();
+        
+        // Register broadcast receiver for file picker
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("com.roamtool.app.FILE_SELECTED");
+        filter.addAction("com.roamtool.app.FILE_ERROR");
+        registerReceiver(filePickerReceiver, filter);
     }
 
     private void createBubbleView() {
@@ -318,132 +344,79 @@ public class BubbleOverlayService extends Service {
     }
 
     private void openFilePicker() {
-        statusText.setText("🔍 Scanning Downloads folder for WiFi files...");
-        filePickerButton.setText("🔄 Scanning...");
+        statusText.setText("📂 Opening file picker...");
+        filePickerButton.setText("🔄 Opening...");
         
-        // Delay to show scanning animation
-        new android.os.Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                scanDownloadsFolder();
-            }
-        }, 500);
-    }
-    
-    private void scanDownloadsFolder() {
         try {
-            File downloadsFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            File[] files = downloadsFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".txt"));
-            
-            if (files != null && files.length > 0) {
-                // Sort files by name
-                java.util.Arrays.sort(files, (f1, f2) -> f1.getName().compareToIgnoreCase(f2.getName()));
-                
-                // Create file selection interface
-                createFileSelectionInterface(files);
-            } else {
-                showNoFilesFound();
-            }
+            Intent filePickerIntent = new Intent(this, FilePickerActivity.class);
+            filePickerIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(filePickerIntent);
         } catch (Exception e) {
-            statusText.setText("❌ Error accessing Downloads folder:\n" + e.getMessage() + "\n\n📋 Please ensure file permissions are granted.");
-            filePickerButton.setText("📂 Try Again");
-            filePickerButton.setOnClickListener(v -> openFilePicker());
+            statusText.setText("❌ Error opening file picker:\n" + e.getMessage());
+            filePickerButton.setText("📂 Select TXT File");
         }
-    }
-    
-    private void createFileSelectionInterface(File[] files) {
-        StringBuilder fileList = new StringBuilder("📁 Found " + files.length + " TXT files:\n\n");
-        for (int i = 0; i < Math.min(files.length, 3); i++) {
-            fileList.append("📄 ").append(files[i].getName()).append("\n");
-        }
-        if (files.length > 3) {
-            fileList.append("... and ").append(files.length - 3).append(" more files\n");
-        }
-        fileList.append("\n✅ Tap button below to select first file");
-        statusText.setText(fileList.toString());
-        
-        // Auto-select first file
-        selectedFile = files[0];
-        filePickerButton.setText("📄 Select: " + files[0].getName());
-        filePickerButton.setOnClickListener(v -> {
-            filePickerButton.setText("⚡ Processing...");
-            processWiFiFile();
-        });
-    }
-    
-    private void showNoFilesFound() {
-        statusText.setText("📂 No TXT files found in Downloads folder\n\n" +
-                          "📝 Create a WiFi file with this format:\n" +
-                          "WiFiName|Password\n" +
-                          "WiFi2|Pass2\n" +
-                          "WiFi3|Pass3\n\n" +
-                          "💾 Save as 'wifi.txt' in Downloads folder\n" +
-                          "🔄 Then tap the button to scan again");
-        
-        filePickerButton.setText("🔄 Scan Again");
-        filePickerButton.setOnClickListener(v -> openFilePicker());
     }
 
-    private void processWiFiFile() {
-        if (selectedFile == null) return;
-        
-        wifiCredentials.clear();
-        List<String> errors = new ArrayList<>();
-        int lineNumber = 0;
-        
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(selectedFile));
-            String line;
-            
-            while ((line = reader.readLine()) != null) {
-                lineNumber++;
-                line = line.trim();
-                
-                if (line.isEmpty()) continue;
-                
-                if (line.contains("|")) {
-                    String[] parts = line.split("\\|");
-                    if (parts.length >= 2) {
-                        String wifiName = parts[0].trim();
-                        String wifiPassword = parts[1].trim();
-                        
-                        if (wifiName.isEmpty()) {
-                            errors.add("Line " + lineNumber + ": Missing WiFi name");
-                        } else if (wifiPassword.isEmpty()) {
-                            errors.add("Line " + lineNumber + ": Missing WiFi password");
-                        } else {
-                            wifiCredentials.add(new WiFiCredential(wifiName, wifiPassword));
-                        }
-                    } else {
-                        errors.add("Line " + lineNumber + ": Invalid format (missing password)");
-                    }
-                } else {
-                    errors.add("Line " + lineNumber + ": Invalid format (missing | separator)");
-                }
-            }
-            reader.close();
-            
-        } catch (IOException e) {
-            statusText.setText("Error reading file: " + e.getMessage());
+    private void processSelectedFile() {
+        if (selectedFileContent == null || selectedFileContent.isEmpty()) {
+            statusText.setText("❌ No file content received");
+            filePickerButton.setText("📂 Select TXT File");
             return;
         }
         
-        // Update status
-        if (!errors.isEmpty()) {
-            StringBuilder errorMessage = new StringBuilder("Errors found:\n");
-            for (String error : errors) {
-                errorMessage.append(error).append("\n");
+        filePickerButton.setText("📄 File: " + selectedFileName);
+        
+        wifiCredentials.clear();
+        List<String> errors = new ArrayList<>();
+        String[] lines = selectedFileContent.split("\n");
+        int lineNumber = 0;
+        
+        for (String line : lines) {
+            lineNumber++;
+            line = line.trim();
+            
+            if (line.isEmpty()) continue;
+            
+            if (line.contains("|")) {
+                String[] parts = line.split("\\|");
+                if (parts.length >= 2) {
+                    String wifiName = parts[0].trim();
+                    String wifiPassword = parts[1].trim();
+                    
+                    if (wifiName.isEmpty()) {
+                        errors.add("Line " + lineNumber + ": Missing WiFi name");
+                    } else if (wifiPassword.isEmpty()) {
+                        errors.add("Line " + lineNumber + ": Missing WiFi password");
+                    } else {
+                        wifiCredentials.add(new WiFiCredential(wifiName, wifiPassword));
+                    }
+                } else {
+                    errors.add("Line " + lineNumber + ": Invalid format (missing password)");
+                }
+            } else {
+                errors.add("Line " + lineNumber + ": Invalid format (missing | separator)");
             }
-            statusText.setText(errorMessage.toString());
+        }
+        
+        // Update status
+        StringBuilder statusMessage = new StringBuilder();
+        if (!errors.isEmpty()) {
+            statusMessage.append("❌ Errors found:\n");
+            for (String error : errors) {
+                statusMessage.append(error).append("\n");
+            }
+            statusMessage.append("\n");
         }
         
         if (!wifiCredentials.isEmpty()) {
-            statusText.setText("Verified " + wifiCredentials.size() + " WiFi credentials. Please tap Start to begin.");
+            statusMessage.append("✅ Verified ").append(wifiCredentials.size()).append(" WiFi credentials.\nPlease tap Start to begin.");
             startButton.setEnabled(true);
         } else {
-            statusText.setText("No valid WiFi credentials found.");
+            statusMessage.append("❌ No valid WiFi credentials found.");
             startButton.setEnabled(false);
         }
+        
+        statusText.setText(statusMessage.toString());
     }
 
     private void startWiFiProcess() {
@@ -522,6 +495,10 @@ public class BubbleOverlayService extends Service {
         }
         if (expandedView != null && isExpanded) {
             windowManager.removeView(expandedView);
+        }
+        // Unregister broadcast receiver
+        if (filePickerReceiver != null) {
+            unregisterReceiver(filePickerReceiver);
         }
     }
 }
