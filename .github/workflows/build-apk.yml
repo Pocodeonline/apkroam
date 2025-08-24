@@ -1,0 +1,60 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Clean project
+      run: ./gradlew clean
+      
+    - name: Build debug APK
+      run: ./gradlew assembleDebug
+      
+    - name: Upload APK as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: RoamTool-APK
+        path: app/build/outputs/apk/debug/app-debug.apk
+        
+    - name: Create Release
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: Roam Tool v1.0.${{ github.run_number }}
+        body: |
+          🚀 **Roam Tool APK Build**
+          
+          **Tính năng:**
+          - Floating bubble overlay như Zalo
+          - Đọc file WiFi từ Downloads
+          - Tự động mở WiFi settings
+          - UI tiếng Việt
+          
+          **Cách cài đặt:**
+          1. Tải file APK bên dưới
+          2. Bật "Cài từ nguồn không xác định"
+          3. Cài đặt APK
+          4. Cấp quyền overlay khi được hỏi
+        files: app/build/outputs/apk/debug/app-debug.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
