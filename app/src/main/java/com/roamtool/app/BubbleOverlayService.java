@@ -318,55 +318,70 @@ public class BubbleOverlayService extends Service {
     }
 
     private void openFilePicker() {
-        try {
-            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-            intent.setType("text/plain");
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-            
-            // Try to start file picker
-            startActivity(intent);
-            
-            // Since we can't get result in Service, we'll provide alternative
-            statusText.setText("File picker opened. Please copy your WiFi file to Downloads folder and try again, or create a file named 'wifi.txt' in Downloads with format:\nWiFiName|Password");
-            
-            // Auto-check Downloads folder for common files
-            checkDownloadsForWiFiFile();
-            
-        } catch (Exception e) {
-            // Fallback: scan Downloads folder
-            statusText.setText("Opening file manager... Please ensure your WiFi file is in Downloads folder");
-            checkDownloadsForWiFiFile();
-        }
+        statusText.setText("🔍 Scanning Downloads folder for WiFi files...");
+        filePickerButton.setText("🔄 Scanning...");
+        
+        // Delay to show scanning animation
+        new android.os.Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                scanDownloadsFolder();
+            }
+        }, 500);
     }
     
-    private void checkDownloadsForWiFiFile() {
+    private void scanDownloadsFolder() {
         try {
             File downloadsFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
             File[] files = downloadsFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".txt"));
             
             if (files != null && files.length > 0) {
-                // Show available files to user
-                StringBuilder fileList = new StringBuilder("Found TXT files in Downloads:\n");
-                for (int i = 0; i < Math.min(files.length, 5); i++) {
-                    fileList.append("• ").append(files[i].getName()).append("\n");
-                }
-                fileList.append("\nTap here again to process the first file.");
-                statusText.setText(fileList.toString());
+                // Sort files by name
+                java.util.Arrays.sort(files, (f1, f2) -> f1.getName().compareToIgnoreCase(f2.getName()));
                 
-                // Auto-select first file for convenience
-                selectedFile = files[0];
-                filePickerButton.setText("Process: " + files[0].getName());
-                
-                // Enable processing
-                filePickerButton.setOnClickListener(v -> processWiFiFile());
+                // Create file selection interface
+                createFileSelectionInterface(files);
             } else {
-                statusText.setText("No TXT files found in Downloads.\n\nCreate a file with format:\nWiFiName|Password\nWiFi2|Pass2");
+                showNoFilesFound();
             }
         } catch (Exception e) {
-            statusText.setText("Error accessing Downloads folder: " + e.getMessage());
+            statusText.setText("❌ Error accessing Downloads folder:\n" + e.getMessage() + "\n\n📋 Please ensure file permissions are granted.");
+            filePickerButton.setText("📂 Try Again");
+            filePickerButton.setOnClickListener(v -> openFilePicker());
         }
+    }
+    
+    private void createFileSelectionInterface(File[] files) {
+        StringBuilder fileList = new StringBuilder("📁 Found " + files.length + " TXT files:\n\n");
+        for (int i = 0; i < Math.min(files.length, 3); i++) {
+            fileList.append("📄 ").append(files[i].getName()).append("\n");
+        }
+        if (files.length > 3) {
+            fileList.append("... and ").append(files.length - 3).append(" more files\n");
+        }
+        fileList.append("\n✅ Tap button below to select first file");
+        statusText.setText(fileList.toString());
+        
+        // Auto-select first file
+        selectedFile = files[0];
+        filePickerButton.setText("📄 Select: " + files[0].getName());
+        filePickerButton.setOnClickListener(v -> {
+            filePickerButton.setText("⚡ Processing...");
+            processWiFiFile();
+        });
+    }
+    
+    private void showNoFilesFound() {
+        statusText.setText("📂 No TXT files found in Downloads folder\n\n" +
+                          "📝 Create a WiFi file with this format:\n" +
+                          "WiFiName|Password\n" +
+                          "WiFi2|Pass2\n" +
+                          "WiFi3|Pass3\n\n" +
+                          "💾 Save as 'wifi.txt' in Downloads folder\n" +
+                          "🔄 Then tap the button to scan again");
+        
+        filePickerButton.setText("🔄 Scan Again");
+        filePickerButton.setOnClickListener(v -> openFilePicker());
     }
 
     private void processWiFiFile() {
