@@ -44,19 +44,21 @@ jobs:
         tag_name: v1.0.${{ github.run_number }}
         name: Roam Tool v1.0.${{ github.run_number }}
         body: |
-          🚀 **Roam Tool APK Build**
+          🚀 **Roam Tool APK Build - THÀNH CÔNG!**
           
           **Tính năng:**
-          - Floating bubble overlay như Zalo
-          - Đọc file WiFi từ Downloads
-          - Tự động mở WiFi settings
-          - UI tiếng Việt
+          - Floating bubble overlay như Zalo chat heads
+          - Đọc file WiFi từ thư mục Downloads (format: TênWiFi|Password)
+          - Tự động mở WiFi settings của Android
+          - UI hoàn toàn tiếng Việt
           
           **Cách cài đặt:**
-          1. Tải file APK bên dưới
-          2. Bật "Cài từ nguồn không xác định"
-          3. Cài đặt APK
-          4. Cấp quyền overlay khi được hỏi
+          1. Tải file APK từ Artifacts ở trên ⬆️
+          2. Enable "Cài đặt từ nguồn không xác định" trong Settings
+          3. Cài đặt APK vào điện thoại
+          4. Cấp quyền "Display over other apps" khi được hỏi
+          5. Mở app và bắt đầu sử dụng floating bubble!
         files: app/build/outputs/apk/debug/app-debug.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true
