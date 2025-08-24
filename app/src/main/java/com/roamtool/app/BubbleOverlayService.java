@@ -277,19 +277,54 @@ public class BubbleOverlayService extends Service {
     }
 
     private void openFilePicker() {
-        // Open Downloads folder
-        File downloadsFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-        
-        // For simplicity, we'll scan the downloads folder for txt files
-        // In a production app, you'd use a proper file picker
-        File[] files = downloadsFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".txt"));
-        
-        if (files != null && files.length > 0) {
-            // For demo purposes, select the first txt file found
-            selectedFile = files[0];
-            processWiFiFile();
-        } else {
-            statusText.setText("No TXT files found in Downloads folder");
+        try {
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("text/plain");
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+            
+            // Try to start file picker
+            startActivity(intent);
+            
+            // Since we can't get result in Service, we'll provide alternative
+            statusText.setText("File picker opened. Please copy your WiFi file to Downloads folder and try again, or create a file named 'wifi.txt' in Downloads with format:\nWiFiName|Password");
+            
+            // Auto-check Downloads folder for common files
+            checkDownloadsForWiFiFile();
+            
+        } catch (Exception e) {
+            // Fallback: scan Downloads folder
+            statusText.setText("Opening file manager... Please ensure your WiFi file is in Downloads folder");
+            checkDownloadsForWiFiFile();
+        }
+    }
+    
+    private void checkDownloadsForWiFiFile() {
+        try {
+            File downloadsFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            File[] files = downloadsFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".txt"));
+            
+            if (files != null && files.length > 0) {
+                // Show available files to user
+                StringBuilder fileList = new StringBuilder("Found TXT files in Downloads:\n");
+                for (int i = 0; i < Math.min(files.length, 5); i++) {
+                    fileList.append("• ").append(files[i].getName()).append("\n");
+                }
+                fileList.append("\nTap here again to process the first file.");
+                statusText.setText(fileList.toString());
+                
+                // Auto-select first file for convenience
+                selectedFile = files[0];
+                filePickerButton.setText("Process: " + files[0].getName());
+                
+                // Enable processing
+                filePickerButton.setOnClickListener(v -> processWiFiFile());
+            } else {
+                statusText.setText("No TXT files found in Downloads.\n\nCreate a file with format:\nWiFiName|Password\nWiFi2|Pass2");
+            }
+        } catch (Exception e) {
+            statusText.setText("Error accessing Downloads folder: " + e.getMessage());
         }
     }
 
