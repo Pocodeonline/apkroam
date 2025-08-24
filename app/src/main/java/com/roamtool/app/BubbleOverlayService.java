@@ -203,13 +203,54 @@ public class BubbleOverlayService extends Service {
         }
 
         expandedParams = new WindowManager.LayoutParams(
-            300,
-            400,
+            320,
+            450,
             layoutFlag,
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
             PixelFormat.TRANSLUCENT);
 
         expandedParams.gravity = Gravity.CENTER;
+        
+        // Add drag functionality to title bar
+        LinearLayout titleBar = expandedView.findViewById(R.id.titleBar);
+        titleBar.setOnTouchListener(new View.OnTouchListener() {
+            private int initialX;
+            private int initialY;
+            private float initialTouchX;
+            private float initialTouchY;
+            private boolean isDragging = false;
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        initialX = expandedParams.x;
+                        initialY = expandedParams.y;
+                        initialTouchX = event.getRawX();
+                        initialTouchY = event.getRawY();
+                        isDragging = false;
+                        return true;
+
+                    case MotionEvent.ACTION_MOVE:
+                        float deltaX = Math.abs(event.getRawX() - initialTouchX);
+                        float deltaY = Math.abs(event.getRawY() - initialTouchY);
+                        
+                        if (deltaX > 10 || deltaY > 10) {
+                            isDragging = true;
+                            expandedParams.x = initialX + (int) (event.getRawX() - initialTouchX);
+                            expandedParams.y = initialY + (int) (event.getRawY() - initialTouchY);
+                            if (isExpanded) {
+                                windowManager.updateViewLayout(expandedView, expandedParams);
+                            }
+                        }
+                        return true;
+
+                    case MotionEvent.ACTION_UP:
+                        return true;
+                }
+                return false;
+            }
+        });
     }
 
     private void toggleExpandedView() {

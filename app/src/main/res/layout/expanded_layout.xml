@@ -1,73 +1,177 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="300dp"
-    android:layout_height="400dp"
+    android:layout_width="320dp"
+    android:layout_height="450dp"
     android:background="@drawable/expanded_background"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:elevation="8dp">
 
-    <TextView
-        android:id="@+id/statusText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Welcome to Roam Tool\nSelect a TXT file to begin"
-        android:textColor="#333333"
-        android:textSize="14sp"
-        android:gravity="center"
-        android:layout_marginBottom="16dp" />
-
-    <Button
-        android:id="@+id/filePickerButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Select TXT File"
-        android:background="@drawable/button_background"
-        android:textColor="@android:color/white"
-        android:layout_marginBottom="16dp" />
-
+    <!-- Title Bar with drag handle -->
     <LinearLayout
+        android:id="@+id/titleBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
+        android:background="#2196F3"
+        android:gravity="center"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="16dp">
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp">
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Anti-Ban Protection"
-            android:textColor="#333333"
-            android:textSize="14sp" />
+            android:text="⚡ Roam Tool Pro"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
-        <Switch
-            android:id="@+id/antiBanSwitch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+        <View
+            android:layout_width="4dp"
+            android:layout_height="20dp"
+            android:layout_marginRight="4dp"
+            android:background="#FFFFFF"
+            android:alpha="0.7" />
+        <View
+            android:layout_width="4dp"
+            android:layout_height="20dp"
+            android:background="#FFFFFF"
+            android:alpha="0.7" />
 
     </LinearLayout>
 
-    <Button
-        android:id="@+id/startButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Start"
-        android:background="@drawable/start_button_background"
-        android:textColor="@android:color/white"
-        android:enabled="false"
-        android:layout_marginBottom="16dp" />
-
-    <View
+    <!-- Scrollable content -->
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:padding="16dp">
 
-    <Button
-        android:id="@+id/closeButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Close"
-        android:background="@drawable/close_button_background"
-        android:textColor="#666666" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Status Card -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:background="#FFFFFF"
+                android:elevation="2dp"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/statusText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🔥 Welcome to Roam Tool Pro\n📂 Select a TXT file to begin"
+                    android:textColor="#333333"
+                    android:textSize="14sp"
+                    android:gravity="center"
+                    android:lineSpacingExtra="4dp" />
+
+            </LinearLayout>
+
+            <!-- File Selection Card -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:background="#FFFFFF"
+                android:elevation="2dp"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="📄 FILE SELECTION"
+                    android:textColor="#2196F3"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/filePickerButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="📂 Select TXT File"
+                    android:background="@drawable/button_background"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:elevation="2dp" />
+
+            </LinearLayout>
+
+            <!-- Settings Card -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:background="#FFFFFF"
+                android:elevation="2dp"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="⚙️ SETTINGS"
+                    android:textColor="#FF9800"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="🛡️ Anti-Ban Protection"
+                        android:textColor="#333333"
+                        android:textSize="14sp" />
+
+                    <Switch
+                        android:id="@+id/antiBanSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Action Buttons -->
+            <Button
+                android:id="@+id/startButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="🚀 START ROAMING"
+                android:background="@drawable/start_button_background"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:enabled="false"
+                android:elevation="4dp"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/closeButton"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="❌ Close"
+                android:background="@drawable/close_button_background"
+                android:textColor="#666666"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+    </ScrollView>
 
 </LinearLayout>
