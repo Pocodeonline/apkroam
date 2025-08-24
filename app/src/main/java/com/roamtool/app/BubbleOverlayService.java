@@ -280,14 +280,6 @@ public class BubbleOverlayService extends Service {
     }
 
     private void toggleExpandedView() {
-        if (isRunning) {
-            // If running, just show the expanded view to display results
-            if (!isExpanded) {
-                showExpandedView();
-            }
-            return;
-        }
-        
         if (isExpanded) {
             hideExpandedView();
         } else {
@@ -465,24 +457,28 @@ public class BubbleOverlayService extends Service {
         isRunning = false;
         startButton.setEnabled(true);
         
-        // Update status - but don't auto-expand the view
+        // Update success status - but don't auto-expand the view
         // User must click the bubble to see the result
+        String successMessage = "✅ Đã xong " + wifiCredentials.size() + " dòng wifi trong note\n\n" +
+                               "📱 Bạn có thể ấn Start để chạy lại";
+        statusText.setText(successMessage);
     }
 
     private void updateUI() {
-        if (selectedFile != null) {
-            filePickerButton.setText("File: " + selectedFile.getName());
+        if (selectedFile != null || !selectedFileName.isEmpty()) {
+            String fileName = selectedFile != null ? selectedFile.getName() : selectedFileName;
+            filePickerButton.setText("📄 File: " + fileName);
         } else {
-            filePickerButton.setText("Select TXT File");
+            filePickerButton.setText("📂 Select TXT File");
         }
         
         antiBanSwitch.setChecked(antiBanEnabled);
         
         if (isRunning) {
-            statusText.setText("Running app...");
+            statusText.setText("🔄 Running app...");
             startButton.setEnabled(false);
         } else if (!wifiCredentials.isEmpty()) {
-            statusText.setText("Process completed successfully!");
+            // Keep the current status text (either success message or verification message)
             startButton.setEnabled(true);
         }
     }
